@@ -1,6 +1,7 @@
 // Chat "Nine" trên web: lưu cấu hình (khóa bí mật), dựng kiến thức cho Nine, gọi Claude, gửi Telegram.
 // File này chỉ chạy phía máy chủ. Khóa bí mật nằm ở config/nine-chat.json (không đưa lên GitHub, không trả ra ngoài).
 import fs from "fs/promises";
+import { createHmac, randomBytes } from "crypto";
 import path from "path";
 import { AM, BUILDINGS, DIST, Q, TY } from "@/data/nine";
 
@@ -133,11 +134,15 @@ export async function askClaude(cfg: NineChatConfig, messages: ChatMessage[]): P
   return r.text;
 }
 
-export async function sendTelegram(cfg: NineChatConfig, text: string, replyTo?: number): Promise<{ ok: boolean; error?: string; messageId?: number }> {
+export interface TgButton { text: string; url: string }
+
+export async function sendTelegram(cfg: NineChatConfig, text: string, replyTo?: number, buttons?: TgButton[]): Promise<{ ok: boolean; error?: string; messageId?: number }> {
   if (!cfg.telegram_token || !cfg.telegram_chat_id) return { ok: false, error: "Chưa cài Telegram" };
   try {
     const payload: Record<string, unknown> = { chat_id: cfg.telegram_chat_id, text: text.slice(0, 3900), disable_web_page_preview: true };
     if (replyTo) { payload.reply_to_message_id = replyTo; payload.allow_sending_without_reply = true; }
+    // Nút bấm dạng đường link: không cần bot đọc tin, nên không đụng tới chương trình khác đang dùng bot này
+    if (buttons && buttons.length) payload.reply_markup = { inline_keyboard: [buttons.map((b) => ({ text: b.text, url: b.url }))] };
     const res = await fetch(`https://api.telegram.org/bot${cfg.telegram_token}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -177,17 +182,6 @@ export async function telegramInfo(token: string) {
   };
 }
 
-/** Bật đường nhận tin: Telegram sẽ gửi tin trong nhóm (lệnh và tin trả lời bot) về web. */
-export async function setTelegramWebhook(token: string, url: string, secret: string) {
-  const r = await tg(token, "setWebhook", { url, secret_token: secret, allowed_updates: ["message"], drop_pending_updates: true });
-  return { ok: !!r.ok, error: r.ok ? "" : r.description || "Telegram từ chối" };
-}
-
-export async function deleteTelegramWebhook(token: string) {
-  const r = await tg(token, "deleteWebhook", {});
-  return { ok: !!r.ok, error: r.ok ? "" : r.description || "" };
-}
-
 /** Tìm các nhóm mà bot đang ở trong (dựa trên tin nhắn gần đây) để lấy mã nhóm. */
 export async function findTelegramGroups(token: string): Promise<{ id: string; title: string }[]> {
   const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?limit=100&allowed_updates=${encodeURIComponent('["message","my_chat_member"]')}`, {
@@ -203,4 +197,22 @@ export async function findTelegramGroups(token: string): Promise<{ id: string; t
     });
   });
   return Array.from(seen, ([id, title]) => ({ id, title }));
+}
+
+/** Mã kèm theo đường link trả lời của từng cuộc chat: chỉ ai có link (người trong nhóm CSKH) mới trả lời được. */
+export async function staffKey(sid: string): Promise<string> {
+  let cfg = await readNineConfig();
+  if (!cfg.webhook_secret) cfg = await writeNineConfig({ webhook_secret: randomBytes(24).toString("hex") });
+  return createHmac("sha256", cfg.webhook_secret || "").update("staff:" + sid).digest("hex").slice(0, 20);
+}
+
+export const SITE_URL = (process.env.SITE_URL || "https://ninehousing.com").replace(/\/$/, "");
+
+export async function staffButtons(sid: string): Promise<TgButton[]> {
+  const k = await staffKey(sid);
+  const base = `${SITE_URL}/tra-loi/${sid}?k=${k}`;
+  return [
+    { text: "💬 Trả lời khách", url: base },
+    { text: "👤 Lễ tân tự trả lời", url: base + "&nhan=1" },
+  ];
 }

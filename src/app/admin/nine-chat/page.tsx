@@ -78,8 +78,6 @@ export default function AdminNineChatPage() {
     const info = d.info || d;
     if (info && info.username) setBotInfo(info);
     if (d.ok === false) setMsg({ ok: false, text: "Telegram báo lỗi: " + (d.error || "") });
-    else if (action === "set_webhook") setMsg({ ok: true, text: "Đã bật. Vào nhóm CSKH gõ /start để thử: bot sẽ trả lời hướng dẫn." });
-    else if (action === "delete_webhook") setMsg({ ok: true, text: "Đã tắt nhận trả lời từ Telegram." });
   };
 
   const testTelegram = async () => {
@@ -177,17 +175,14 @@ export default function AdminNineChatPage() {
           </div>
           <div className="admin-form-card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <p style={hint}>
-              Khi bật: trong nhóm CSKH, lễ tân bấm Trả lời (Reply) vào tin “🌐 Chat web #mã” rồi gõ nội dung — khách thấy ngay trong khung chat trên web. Cũng có thể gõ: /tl mã nội-dung. Sau khi lễ tân trả lời, Nine tạm ngừng trả lời khách đó 10 phút.
-              Lưu ý: bot chỉ nên dùng cho một nơi nhận tin; nếu bot này đang được chương trình khác đọc tin thì chương trình đó sẽ ngừng nhận.
+              Mỗi tin “🌐 Chat web #mã” trong nhóm CSKH có 2 nút: «💬 Trả lời khách» mở trang trả lời (xem cả cuộc chat, gõ nội dung, khách thấy ngay trên web) và «👤 Lễ tân tự trả lời» để Nine ngừng trả lời khách đó. Không cần cài gì thêm; bot chỉ gửi tin đi nên không ảnh hưởng chương trình khác đang dùng bot này.
             </p>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button type="button" style={btn} disabled={busy} onClick={() => hook("telegram_info")}>Xem trạng thái bot</button>
-              <button type="button" style={btnMain} disabled={busy} onClick={() => hook("set_webhook")}>Bật</button>
-              <button type="button" style={btn} disabled={busy} onClick={() => hook("delete_webhook")}>Tắt</button>
             </div>
             {botInfo && (
               <p style={{ ...hint, color: "#0f172a" }}>
-                Bot: {botInfo.name} (@{botInfo.username}) · Nhận trả lời từ Telegram: {botInfo.webhook_host ? "ĐANG BẬT → " + botInfo.webhook_host : "đang tắt"} · Tin chờ: {botInfo.pending}
+                Bot: {botInfo.name} (@{botInfo.username}) · Đường nhận tin riêng (webhook): {botInfo.webhook_host || "không có"} · Tin chờ: {botInfo.pending}
                 {botInfo.last_error ? " · Lỗi gần nhất: " + botInfo.last_error : ""}
               </p>
             )}

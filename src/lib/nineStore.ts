@@ -9,7 +9,8 @@ const KEEP_MS = 48 * 3600 * 1000;
 export const STAFF_PAUSE_MS = 10 * 60 * 1000; // sau khi lễ tân trả lời, Nine tạm im 10 phút
 
 export interface StaffMsg { i: number; text: string; name: string; ts: number }
-export interface Session { sid: string; lang: string; updated: number; staff: StaffMsg[]; lastStaffAt: number; tgIds: number[] }
+export interface LogMsg { who: 'guest' | 'nine' | 'staff'; text: string; name?: string; ts: number }
+export interface Session { sid: string; lang: string; updated: number; staff: StaffMsg[]; lastStaffAt: number; tgIds: number[]; log?: LogMsg[]; manualUntil?: number }
 interface Store { sessions: Record<string, Session>; loaded: boolean; saving: ReturnType<typeof setTimeout> | null }
 
 const g = globalThis as unknown as { __nineStore?: Store };
@@ -86,5 +87,27 @@ export async function addStaffMessage(sid: string, text: string, name: string): 
 }
 
 export function staffIsHandling(s: Session | null): boolean {
-  return !!s && s.lastStaffAt > 0 && Date.now() - s.lastStaffAt < STAFF_PAUSE_MS;
+  if (!s) return false;
+  if (s.manualUntil && Date.now() < s.manualUntil) return true;
+  return s.lastStaffAt > 0 && Date.now() - s.lastStaffAt < STAFF_PAUSE_MS;
+}
+
+/** Ghi lại nội dung cuộc chat để lễ tân xem ở trang trả lời. */
+export async function logMessage(sid: string, who: LogMsg["who"], text: string, name?: string) {
+  const s = await getSession(sid);
+  if (!s || !text) return;
+  if (!s.log) s.log = [];
+  s.log.push({ who, text: text.slice(0, 2000), name, ts: Date.now() });
+  if (s.log.length > 80) s.log = s.log.slice(-80);
+  saveSoon();
+}
+
+/** Lễ tân nhận cuộc chat (Nine ngừng trả lời tối đa 60 phút) hoặc trả lại cho Nine. */
+export async function setManual(sid: string, on: boolean): Promise<Session | null> {
+  const s = await getSession(sid);
+  if (!s) return null;
+  s.manualUntil = on ? Date.now() + 60 * 60 * 1000 : 0;
+  if (!on) s.lastStaffAt = 0;
+  saveSoon();
+  return s;
 }

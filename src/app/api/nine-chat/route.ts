@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { askClaude, ChatMessage, HOTLINE, readNineConfig, sendTelegram } from "@/lib/nineChat";
-import { getSession, linkTelegramMessage, staffIsHandling, touchSession } from "@/lib/nineStore";
+import { askClaude, ChatMessage, HOTLINE, readNineConfig, sendTelegram, staffButtons } from "@/lib/nineChat";
+import { getSession, linkTelegramMessage, logMessage, staffIsHandling, touchSession } from "@/lib/nineStore";
 
 export const dynamic = "force-dynamic";
 
@@ -70,11 +70,13 @@ export async function POST(request: Request) {
     const isFirst = messages.filter((m) => m.role === "user").length === 1;
     const hasPhone = PHONE.test(last);
     const head = `${hasPhone ? "📞 KHÁCH ĐỂ LẠI LIÊN HỆ\n" : ""}🌐 Chat web #${sessionId} (${lang})${isFirst ? " — khách mới" : ""}`;
-    const tail = "\n↩️ Trả lời (Reply) tin này để nhắn thẳng cho khách.";
+    const tail = "\n\nBấm «Trả lời khách» để nhắn cho khách ngay trong khung chat web; bấm «Lễ tân tự trả lời» để Nine ngừng trả lời khách này.";
+    const buttons = await staffButtons(sessionId);
+    await logMessage(sessionId, "guest", last);
 
     // Lễ tân vừa trả lời khách này: Nine tạm im, chỉ chuyển tin về nhóm
     if (staffIsHandling(session)) {
-      const sent = await sendTelegram(cfg, `${head}\nKhách: ${last}\n(Nine đang tạm ngừng vì lễ tân đang hỗ trợ)${tail}`);
+      const sent = await sendTelegram(cfg, `${head}\nKhách: ${last}\n(Nine đang tạm ngừng vì lễ tân đang hỗ trợ)${tail}`, undefined, buttons);
       if (sent.messageId) await linkTelegramMessage(sessionId, sent.messageId);
       return NextResponse.json({ reply: "", ai: false, staff: true });
     }
@@ -92,7 +94,8 @@ export async function POST(request: Request) {
 
     // Gửi nội dung tư vấn về nhóm Telegram CSKH
     const note = usedAi ? "" : `\n⚠️ Nine chưa trả lời được${cfg.anthropic_key ? " (lỗi kết nối AI)" : " (chưa cài khóa AI)"} — lễ tân cần trả lời khách.`;
-    const sent = await sendTelegram(cfg, `${head}\nKhách: ${last}\nNine: ${reply}${note}${tail}`);
+    await logMessage(sessionId, "nine", reply);
+    const sent = await sendTelegram(cfg, `${head}\nKhách: ${last}\nNine: ${reply}${note}${tail}`, undefined, buttons);
     if (sent.messageId) await linkTelegramMessage(sessionId, sent.messageId);
 
     return NextResponse.json({ reply, ai: usedAi });
