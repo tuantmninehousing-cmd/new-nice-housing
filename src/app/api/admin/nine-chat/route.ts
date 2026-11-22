@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, verifyAdminToken } from "@/lib/auth";
-import { DEFAULT_MODEL, askClaude, findTelegramGroups, readNineConfig, sendTelegram, writeNineConfig } from "@/lib/nineChat";
+import { DEFAULT_MODEL, askClaudeDetailed, findTelegramGroups, readNineConfig, sendTelegram, writeNineConfig } from "@/lib/nineChat";
 
 export const dynamic = "force-dynamic";
 
@@ -63,8 +63,9 @@ export async function POST(request: NextRequest) {
     if (action === "test_ai") {
       if (!cfg.anthropic_key) return NextResponse.json({ ok: false, error: "Chưa lưu khóa Claude API" });
       try {
-        const reply = await askClaude(cfg, [{ role: "user", content: "Chào Nine, bên mình có căn 2 phòng ngủ ở Tây Hồ không, giá bao nhiêu?" }]);
-        return NextResponse.json({ ok: !!reply, reply });
+        const question = typeof body.question === "string" && body.question.trim() ? body.question.trim().slice(0, 1000) : "Chào Nine, bên mình có căn 2 phòng ngủ ở Tây Hồ không, giá bao nhiêu?";
+        const r = await askClaudeDetailed(cfg, [{ role: "user", content: question }]);
+        return NextResponse.json({ ok: !!r && !!r.text && r.stop !== "max_tokens", reply: r?.text || "", stop: r?.stop, blocks: r?.blocks, usage: r?.usage });
       } catch (e) {
         return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "Lỗi" });
       }

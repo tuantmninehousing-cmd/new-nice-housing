@@ -54,6 +54,7 @@ CÁCH TRẢ LỜI
 - Trả lời bằng đúng ngôn ngữ khách dùng (Việt, Anh, Nhật, Hàn hoặc ngôn ngữ khác). Tiếng Việt: xưng "em", gọi khách là "anh/chị".
 - Ngắn gọn, thân thiện, mỗi lần tối đa khoảng 5 câu; không dùng bảng, không dùng ký hiệu markdown.
 - Chỉ dùng thông tin trong phần DỮ LIỆU bên dưới. Không tự nghĩ ra giá, khuyến mãi, tiện ích, chính sách hay tình trạng phòng trống. Điều gì không có trong dữ liệu thì nói rõ là lễ tân Nine Housing sẽ xác nhận lại.
+- Con số \"N căn\" trong dữ liệu là tổng số căn của cả tòa. Dữ liệu không cho biết mỗi hạng phòng có bao nhiêu căn, nên đừng nói số căn của một hạng phòng; chỉ nói \"có hạng phòng ...\".
 - Bạn KHÔNG biết phòng nào còn trống và KHÔNG tự đặt phòng, giữ phòng hay nhận thanh toán. Khi khách muốn đặt: hỏi ngày nhận phòng, ngày trả phòng, số người, tòa nhà/hạng phòng mong muốn, tên và số điện thoại (hoặc Zalo/WhatsApp); sau đó nói lễ tân sẽ liên hệ xác nhận phòng trống và tổng tiền.
 - Giá trong dữ liệu là giá niêm yết một đêm (ngày thường và thứ 6–thứ 7), đã gồm thuế phí; giá chính xác do lễ tân xác nhận theo ngày ở. Hiện không có chương trình giảm giá riêng trên web. Thuê dài ngày: lễ tân báo giá riêng.
 - Việc gấp hoặc ngoài khả năng: mời khách gọi/nhắn Zalo hotline ${HOTLINE} (hỗ trợ 24/7).
@@ -70,30 +71,65 @@ export interface ChatMessage {
   content: string;
 }
 
-export async function askClaude(cfg: NineChatConfig, messages: ChatMessage[]): Promise<string | null> {
-  if (!cfg.anthropic_key) return null;
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+export interface ClaudeResult {
+  text: string;
+  stop: string;
+  blocks: string[];
+  usage?: { input_tokens?: number; output_tokens?: number };
+}
+
+async function callClaude(cfg: NineChatConfig, messages: ChatMessage[], maxTokens: number, noThinking: boolean): Promise<Response> {
+  const body: Record<string, unknown> = {
+    model: cfg.model || DEFAULT_MODEL,
+    max_tokens: maxTokens,
+    system: buildSystemPrompt(cfg.extra_notes),
+    messages,
+  };
+  // Tắt phần "suy nghĩ" của mẫu để câu trả lời không bị hụt chữ và đỡ tốn tiền
+  if (noThinking) body.thinking = { type: "disabled" };
+  return fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-api-key": cfg.anthropic_key,
+      "x-api-key": cfg.anthropic_key || "",
       "anthropic-version": "2023-06-01",
     },
-    body: JSON.stringify({
-      model: cfg.model || DEFAULT_MODEL,
-      max_tokens: 600,
-      system: buildSystemPrompt(cfg.extra_notes),
-      messages,
-    }),
-    signal: AbortSignal.timeout(30000),
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(45000),
   });
-  if (!res.ok) {
-    const t = await res.text().catch(() => "");
-    throw new Error(`Claude API ${res.status}: ${t.slice(0, 300)}`);
+}
+
+/** Gọi Claude và trả về chi tiết (dùng cho trang quản trị kiểm tra). */
+export async function askClaudeDetailed(cfg: NineChatConfig, messages: ChatMessage[]): Promise<ClaudeResult | null> {
+  if (!cfg.anthropic_key) return null;
+  let last: ClaudeResult | null = null;
+  // Lần 1: giới hạn 1500 chữ-số (token); nếu bị cắt giữa chừng thì gọi lại với giới hạn lớn hơn
+  for (const maxTokens of [1500, 4000]) {
+    let res = await callClaude(cfg, messages, maxTokens, true);
+    if (res.status === 400) res = await callClaude(cfg, messages, maxTokens, false); // mẫu không nhận tham số tắt suy nghĩ
+    if (!res.ok) {
+      const t = await res.text().catch(() => "");
+      throw new Error(`Claude API ${res.status}: ${t.slice(0, 300)}`);
+    }
+    const data = (await res.json()) as { content?: { type: string; text?: string }[]; stop_reason?: string; usage?: ClaudeResult["usage"] };
+    const blocks = data.content || [];
+    last = {
+      text: blocks.filter((c) => c.type === "text").map((c) => c.text || "").join("").trim(),
+      stop: data.stop_reason || "",
+      blocks: blocks.map((c) => c.type),
+      usage: data.usage,
+    };
+    if (last.stop !== "max_tokens") break;
   }
-  const data = (await res.json()) as { content?: { type: string; text?: string }[] };
-  const text = (data.content || []).filter((c) => c.type === "text").map((c) => c.text || "").join("").trim();
-  return text || null;
+  return last;
+}
+
+export async function askClaude(cfg: NineChatConfig, messages: ChatMessage[]): Promise<string | null> {
+  const r = await askClaudeDetailed(cfg, messages);
+  if (!r || !r.text) return null;
+  // Vẫn bị cắt sau hai lần gọi: coi như chưa trả lời được để lễ tân tiếp nhận
+  if (r.stop === "max_tokens") return null;
+  return r.text;
 }
 
 export async function sendTelegram(cfg: NineChatConfig, text: string): Promise<{ ok: boolean; error?: string }> {
