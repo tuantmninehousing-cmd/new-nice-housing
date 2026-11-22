@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Bell,
   Home,
+  MessageCircle,
 } from "lucide-react";
 import "./admin.css";
 
@@ -47,6 +48,7 @@ const menuGroups = [
     label: "Hệ thống",
     items: [
       { id: "settings", label: "Cài đặt", href: "/admin/settings", icon: Briefcase },
+      { id: "nine-chat", label: "Chat Nine", href: "/admin/nine-chat", icon: MessageCircle },
     ],
   },
 ];
