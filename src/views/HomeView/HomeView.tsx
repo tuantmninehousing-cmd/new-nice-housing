@@ -26,6 +26,7 @@ interface HomeViewProps {
 
 const ZALO_URL = 'https://zalo.me/0968071393';
 const LOCALES = ['vi-VN', 'en-US', 'ja-JP', 'ko-KR'];
+const PROMO_FROM = new Date('2026-11-22T00:00:00+07:00').getTime();
 
 // Chữ dùng cho bản đang chạy thật (4 ngôn ngữ, thứ tự vi, en, ja, ko).
 // Phần đặt phòng: khách gửi yêu cầu, lễ tân xác nhận (chưa nối lịch phòng tự động).
@@ -95,7 +96,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ hotels, onNavigateToDetails 
     useEffect(() => {
         fetch('/api/blogs')
             .then((r) => r.json())
-            .then((d) => setPosts(Array.isArray(d) ? d.slice(0, 3) : []))
+            // Chỉ hiện bài đăng từ ngày ra mắt giao diện mới (các bài cũ hơn là bài viết chung, không phải khuyến mãi)
+            .then((d) => setPosts(Array.isArray(d) ? d.filter((p: BlogPost) => new Date(p.date).getTime() >= PROMO_FROM).slice(0, 3) : []))
             .catch(() => { });
         fetch('/api/settings')
             .then((r) => r.json())
