@@ -1,8 +1,8 @@
 {
   "common": {
     "home": "Home",
-    "apartments": "Apartments & Stays",
-    "blogs": "Blogs",
+    "apartments": "Buildings",
+    "blogs": "Offers",
     "policy": "Policy",
     "terms": "Terms",
     "login": "Login",
@@ -169,12 +169,12 @@
     "error_booking_failed": "Booking failed. Please try again."
   },
   "footer": {
-    "desc": "Vietnam's leading apartment rental platform. Connecting you with thousands of stays.",
-    "copyright": "© 2026 NineHousing. All rights reserved. 🇻🇳 Vietnam Brand",
+    "desc": "Nine Housing apartments in Ba Dinh and Tay Ho, Hanoi: quiet, comfortable like home, with support 24/7.",
+    "copyright": "© 2026 Nine Housing · Ba Dinh · Tay Ho · Hanoi",
     "address_label": "Address: ",
-    "address_value": "123 Tran Phu Street, Ba Dinh, Hanoi",
+    "address_value": "No. 136 Vu Mien Street, Tay Ho Ward, Hanoi, Vietnam",
     "phone_label": "Phone: ",
-    "phone_value": "1900 1234",
+    "phone_value": "0968.071.393",
     "email_label": "Email: ",
     "email_value": "contact@ninehousing.com",
     "domain_label": "Website: ",
@@ -191,14 +191,14 @@
     "title": "Terms of Use"
   },
   "blogs": {
-    "eyebrow": "News & Tips",
-    "title": "Blogs",
+    "eyebrow": "Offers & events",
+    "title": "Offers",
     "loading": "Loading...",
-    "no_posts": "No posts yet.",
+    "no_posts": "There are no offers at the moment.",
     "page_of_posts": "Page {{page}}/{{total}} ({{count}} posts)",
     "related_posts": "Related posts",
     "post_not_found": "Post not found.",
-    "back_to_blogs": "Back to Blogs"
+    "back_to_blogs": "Back to Offers"
   },
   "amenities": {
     "Air conditioner": "Air conditioner",

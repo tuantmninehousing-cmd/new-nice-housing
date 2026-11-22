@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useLanguage } from '@/context/LanguageContext';
-import { useRouter } from 'next/navigation';
+import { HOME_TEXT } from '@/data/nine';
+import { HOTLINE, HOTLINE_TEL } from './Navbar';
+import { ChatNine } from '../Nine/ChatNine';
 
 interface FooterProps {
-    goList: () => void;
+    goList?: () => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ goList }) => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const Footer: React.FC<FooterProps> = (_props) => {
     const { t, language } = useLanguage();
-    const router = useRouter();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [settings, setSettings] = useState<any>(null);
+    const nav = HOME_TEXT[language].nav;
 
     useEffect(() => {
         fetch('/api/settings')
@@ -20,56 +25,58 @@ export const Footer: React.FC<FooterProps> = ({ goList }) => {
             .catch(console.error);
     }, []);
 
-    const address = language === 'en'
-        ? (settings?.address_value_en || t('footer.address_value'))
-        : (settings?.address_value_vi || t('footer.address_value'));
-    const phone = settings?.phone_value || t('footer.phone_value');
-    const email = settings?.email_value || t('footer.email_value');
-    const domain = settings?.domain_value || t('footer.domain_value');
+    const address = language === 'vi'
+        ? (settings?.address_value_vi || t('footer.address_value'))
+        : (settings?.address_value_en || t('footer.address_value'));
+    const email = settings?.email_value || '';
 
     return (
-        <footer>
-            <div className="footer-grid">
-                <div>
-                    <div className="footer-logo" style={{ marginBottom: '16px' }}>
-                        <img src={settings?.logo_url || '/logo.png'} alt="Nine Housing" style={{ height: '48px', width: 'auto' }} />
+        <>
+            <footer className="nh-footer">
+                <div className="footer-grid">
+                    <div>
+                        <div style={{ marginBottom: '16px' }}>
+                            <img src="/nine-logo.svg" alt="Nine Housing – Live your way" style={{ height: '84px', width: 'auto' }} />
+                        </div>
+                        <div className="footer-desc">{t('footer.desc')}</div>
                     </div>
-                    <div className="footer-desc">{t('footer.desc')}</div>
+                    <div className="footer-col">
+                        <h5>Nine Housing</h5>
+                        <Link href="/#gioi-thieu">{nav.intro}</Link>
+                        <Link href="/#toa-nha">{nav.buildings}</Link>
+                        <Link href="/#dat-phong">{nav.booking}</Link>
+                        <Link href="/blogs">{nav.promo}</Link>
+                    </div>
+                    <div className="footer-col">
+                        <h5>{t('common.contact_support')}</h5>
+                        <Link href="/#lien-he">{nav.contact}</Link>
+                        <Link href="/policy">{t('common.policy')}</Link>
+                        <Link href="/terms">{t('common.terms')}</Link>
+                    </div>
+                    <div className="footer-col" style={{ flex: 1.5, minWidth: '250px' }}>
+                        <h5>{t('footer.contact_info')}</h5>
+                        <p className="nh-footer-line">
+                            <i className="fa-solid fa-location-dot" style={{ marginTop: '4px' }}></i>
+                            <span>{address}</span>
+                        </p>
+                        <p className="nh-footer-line">
+                            <i className="fa-solid fa-phone" style={{ marginTop: '4px' }}></i>
+                            <a href={HOTLINE_TEL}>{HOTLINE}</a>
+                        </p>
+                        {email && (
+                            <p className="nh-footer-line">
+                                <i className="fa-regular fa-envelope" style={{ marginTop: '4px' }}></i>
+                                <a href={`mailto:${email}`}>{email}</a>
+                            </p>
+                        )}
+                    </div>
                 </div>
-                <div className="footer-col">
-                    <h5>{t('home.discover')}</h5>
-                    <a onClick={() => router.push('/apartment')}>{t('home.luxury_apartments')}</a>
-                    <a onClick={() => router.push('/apartment')}>{t('home.premium_condos')}</a>
-                    <a onClick={() => router.push('/apartment')}>{t('home.homestay')}</a>
+                <div className="footer-bottom">
+                    <div className="nh-footer-tag">Nine Housing · Live your way</div>
+                    <div className="footer-copy">{t('footer.copyright')}</div>
                 </div>
-                <div className="footer-col">
-                    <h5>{t('home.support')}</h5>
-                    <a href="#">{t('home.help_center')}</a>
-                    <a href="#">{t('common.secure_payment')}</a>
-                </div>
-                <div className="footer-col" style={{ flex: 1.5, minWidth: '250px' }}>
-                    <h5>{t('footer.contact_info')}</h5>
-                    <p style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', color: 'var(--mid)', marginBottom: '8px', lineHeight: '1.4' }}>
-                        <i className="fa-solid fa-location-dot" style={{ marginTop: '4px' }}></i>
-                        <span><strong>{t('footer.address_label')}</strong> {address}</span>
-                    </p>
-                    <p style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--mid)', marginBottom: '8px' }}>
-                        <i className="fa-solid fa-phone"></i>
-                        <span><strong>{t('footer.phone_label')}</strong> {phone}</span>
-                    </p>
-                    <p style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--mid)', marginBottom: '8px' }}>
-                        <i className="fa-regular fa-envelope"></i>
-                        <span><strong>{t('footer.email_label')}</strong> {email}</span>
-                    </p>
-                    <p style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--mid)', marginBottom: '8px' }}>
-                        <i className="fa-solid fa-globe"></i>
-                        <span><strong>{t('footer.domain_label')}</strong> {domain}</span>
-                    </p>
-                </div>
-            </div>
-            <div className="footer-bottom">
-                <div className="footer-copy">{t('footer.copyright')}</div>
-            </div>
-        </footer>
+            </footer>
+            <ChatNine />
+        </>
     );
 };

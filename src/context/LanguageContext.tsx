@@ -3,8 +3,16 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import en from '../i18n/en.json';
 import vi from '../i18n/vi.json';
+import ja from '../i18n/ja.json';
+import ko from '../i18n/ko.json';
 
-type Language = 'en' | 'vi';
+export type Language = 'vi' | 'en' | 'ja' | 'ko';
+export const LANGUAGES: { code: Language; label: string }[] = [
+    { code: 'vi', label: 'VI' },
+    { code: 'en', label: 'EN' },
+    { code: 'ja', label: '日本語' },
+    { code: 'ko', label: '한국어' },
+];
 
 interface LanguageContextProps {
     language: Language;
@@ -12,18 +20,37 @@ interface LanguageContextProps {
     t: (key: string, vars?: Record<string, string | number>) => string;
 }
 
-const dictionaries = { en, vi };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const dictionaries: Record<Language, any> = { en, vi, ja, ko };
+
+const isLanguage = (v: unknown): v is Language => v === 'vi' || v === 'en' || v === 'ja' || v === 'ko';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const lookup = (dict: any, key: string): unknown => {
+    let current = dict;
+    for (const k of key.split('.')) {
+        if (current == null || current[k] === undefined) return undefined;
+        current = current[k];
+    }
+    return current;
+};
 
 const LanguageContext = createContext<LanguageContextProps | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-    const [language, setLanguageState] = useState<Language>('en');
+    const [language, setLanguageState] = useState<Language>('vi');
 
     useEffect(() => {
-        const savedLang = localStorage.getItem('appLang') as Language;
-        if (savedLang && (savedLang === 'en' || savedLang === 'vi')) {
+        const savedLang = localStorage.getItem('appLang');
+        if (isLanguage(savedLang)) {
             setLanguageState(savedLang);
+            return;
         }
+        // Lần đầu vào trang: chọn theo ngôn ngữ trình duyệt của khách
+        const nav = (navigator.language || '').toLowerCase();
+        if (nav.startsWith('ja')) setLanguageState('ja');
+        else if (nav.startsWith('ko')) setLanguageState('ko');
+        else if (nav && !nav.startsWith('vi')) setLanguageState('en');
     }, []);
 
     useEffect(() => {
@@ -38,19 +65,14 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
         localStorage.setItem('appLang', lang);
     }, []);
 
-    // Memoize t so its reference only changes when language changes
+    // Memoize t so its reference only changes when language changes.
+    // Tiếng Nhật / Hàn thiếu khóa nào thì dùng tiếng Anh.
     const t = React.useCallback((key: string, vars?: Record<string, string | number>): string => {
-        const keys = key.split('.');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let current: any = dictionaries[language];
-        for (const k of keys) {
-            if (current[k] === undefined) {
-                return key;
-            }
-            current = current[k];
-        }
-        let str = current as string;
-        if (vars && typeof str === 'string') {
+        let found = lookup(dictionaries[language], key);
+        if (found === undefined && (language === 'ja' || language === 'ko')) found = lookup(dictionaries.en, key);
+        if (typeof found !== 'string') return key;
+        let str = found;
+        if (vars) {
             Object.entries(vars).forEach(([k, v]) => {
                 str = str.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v));
             });

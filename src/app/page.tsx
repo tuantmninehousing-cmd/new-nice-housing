@@ -21,7 +21,7 @@ export default function App() {
 
   useEffect(() => {
     const titles: Record<string, string> = {
-      home: "Nine Housing - Đặt phòng & Thuê nhà dễ dàng",
+      home: "Nine Housing – Căn hộ Ba Đình, Tây Hồ, Hà Nội | Live your way",
       list: "Danh sách chỗ ở | Nine Housing",
       details: activeHotel ? `${activeHotel.name} | Nine Housing` : "Chi tiết chỗ ở | Nine Housing",
       checkout: "Đặt phòng | Nine Housing",

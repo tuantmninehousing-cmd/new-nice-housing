@@ -1,8 +1,8 @@
 {
   "common": {
     "home": "Trang chủ",
-    "apartments": "Căn hộ & Nơi lưu trú",
-    "blogs": "Blogs",
+    "apartments": "Tòa nhà",
+    "blogs": "Khuyến mãi",
     "policy": "Chính sách",
     "terms": "Điều khoản",
     "login": "Đăng nhập",
@@ -168,12 +168,12 @@
     "error_booking_failed": "Đặt phòng thất bại. Vui lòng thử lại."
   },
   "footer": {
-    "desc": "Nền tảng đặt thuê căn hộ hàng đầu Việt Nam. Kết nối bạn với hàng ngàn chỗ lưu trú.",
-    "copyright": "© 2026 NineHousing. Tất cả quyền được bảo lưu. 🇻🇳 Thương hiệu Việt Nam",
+    "desc": "Căn hộ Nine Housing tại Ba Đình và Tây Hồ, Hà Nội: yên tĩnh, tiện nghi như ở nhà, hỗ trợ 24/7.",
+    "copyright": "© 2026 Nine Housing · Ba Đình · Tây Hồ · Hà Nội",
     "address_label": "Địa chỉ: ",
-    "address_value": "123 Trần Phú, Ba Đình, Hà Nội",
+    "address_value": "Số 136 phố Vũ Miên, phường Tây Hồ, Hà Nội",
     "phone_label": "Điện thoại: ",
-    "phone_value": "1900 1234",
+    "phone_value": "0968.071.393",
     "email_label": "Email: ",
     "email_value": "contact@ninehousing.com",
     "domain_label": "Website: ",
@@ -190,14 +190,14 @@
     "title": "Điều khoản sử dụng"
   },
   "blogs": {
-    "eyebrow": "Tin tức & Mẹo hay",
-    "title": "Blogs",
+    "eyebrow": "Ưu đãi & Sự kiện",
+    "title": "Khuyến mãi",
     "loading": "Đang tải...",
-    "no_posts": "Chưa có bài viết nào.",
+    "no_posts": "Hiện chưa có chương trình khuyến mãi.",
     "page_of_posts": "Trang {{page}}/{{total}} ({{count}} bài)",
     "related_posts": "Bài viết liên quan",
     "post_not_found": "Không tìm thấy bài viết.",
-    "back_to_blogs": "Quay lại Blogs"
+    "back_to_blogs": "Quay lại Khuyến mãi"
   },
   "amenities": {
     "Air conditioner": "Điều hòa",

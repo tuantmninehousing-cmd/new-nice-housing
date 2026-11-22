@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import "./nine.css";
 import Providers from "@/components/Providers";
 
 const geistSans = Geist({
@@ -16,9 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     template: "%s | Nine Housing",
-    default: "Nine Housing - Đặt phòng & Thuê nhà dễ dàng",
+    default: "Nine Housing – Căn hộ Ba Đình, Tây Hồ, Hà Nội | Live your way",
   },
-  description: "Hệ thống đặt phòng và thuê nhà Nine Housing",
+  description: "Căn hộ Nine Housing tại Ba Đình và Tây Hồ, Hà Nội: yên tĩnh, tiện nghi như ở nhà, hỗ trợ 24/7. Studio đến 3 phòng ngủ.",
 };
 
 export default function RootLayout({
@@ -27,7 +28,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="vi" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning

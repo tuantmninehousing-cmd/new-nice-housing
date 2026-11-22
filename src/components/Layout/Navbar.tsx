@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useLanguage } from '@/context/LanguageContext';
+import { useLanguage, LANGUAGES } from '@/context/LanguageContext';
+import { HOME_TEXT } from '@/data/nine';
 
 interface NavbarProps {
     view?: string;
@@ -11,78 +12,108 @@ interface NavbarProps {
     goList?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ view, goHome, goList }) => {
+export const HOTLINE = '0968.071.393';
+export const HOTLINE_TEL = 'tel:0968071393';
+
+const SECTIONS = [
+    { id: 'gioi-thieu', key: 'intro' },
+    { id: 'toa-nha', key: 'buildings' },
+    { id: 'dat-phong', key: 'booking' },
+    { id: 'khuyen-mai', key: 'promo' },
+    { id: 'lien-he', key: 'contact' },
+] as const;
+
+export const Navbar: React.FC<NavbarProps> = ({ view, goHome }) => {
     const pathname = usePathname();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [settings, setSettings] = useState<any>(null);
-
-    useEffect(() => {
-        fetch("/api/settings")
-            .then(r => r.json())
-            .then(data => {
-                if (data && !data.error) {
-                    setSettings(data);
-                }
-            })
-            .catch(() => { });
-    }, []);
-
-    const isHome = pathname === '/';
-    const isApartmentList = pathname === '/apartment';
-    const isApartmentDetail = pathname?.startsWith('/apartment/');
-    const isBlogs = pathname === '/blogs';
-    const isPolicy = pathname === '/policy';
-    const isTerms = pathname === '/terms';
-
-    const { t, language, setLanguage } = useLanguage();
+    const { language, setLanguage } = useLanguage();
+    const nav = HOME_TEXT[language].nav;
+    const isPromoPage = pathname?.startsWith('/blogs');
 
     useEffect(() => { document.body.style.overflow = isMenuOpen ? 'hidden' : ''; }, [isMenuOpen]);
 
+    // Ở trang chủ: cuộn tới mục. Ở trang khác: Link sẽ chuyển về trang chủ kèm #mục.
+    const onSectionClick = (id: string) => (e: React.MouseEvent) => {
+        setIsMenuOpen(false);
+        if (pathname !== '/') return;
+        e.preventDefault();
+        if (view && view !== 'home') goHome?.();
+        window.setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            window.history.replaceState(null, '', `/#${id}`);
+        }, view && view !== 'home' ? 120 : 0);
+    };
+
+    const onLogoClick = (e: React.MouseEvent) => {
+        setIsMenuOpen(false);
+        if (pathname !== '/') return;
+        e.preventDefault();
+        goHome?.();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const langSwitcher = (
+        <div className="nh-langs" role="group" aria-label="Ngôn ngữ / Language">
+            {LANGUAGES.map((l) => (
+                <button
+                    key={l.code}
+                    type="button"
+                    className={language === l.code ? 'on' : ''}
+                    aria-pressed={language === l.code}
+                    onClick={() => setLanguage(l.code)}
+                >
+                    {l.label}
+                </button>
+            ))}
+        </div>
+    );
+
     return (
         <>
-            <nav>
-                <Link href="/" className="logo" style={{ display: 'flex', alignItems: 'center' }}>
-                    <img src={settings?.logo_url || '/logo.png'} alt="Nine Housing" style={{ height: '40px', width: 'auto' }} />
+            <nav className="nh-top">
+                <Link href="/" className="nh-logo" aria-label="Nine Housing – Live your way" onClick={onLogoClick}>
+                    <img src="/nine-logo.svg" alt="Nine Housing – Live your way" />
                 </Link>
-                <ul className="nav-links">
-                    <li><Link href="/" className={isHome ? 'active' : ''}>{t('common.home')}</Link></li>
-                    <li><Link href="/apartment" className={isApartmentList || isApartmentDetail ? 'active' : ''}>{t('common.apartments')}</Link></li>
-                    <li><Link href="/blogs" className={isBlogs ? 'active' : ''}>{t('common.blogs')}</Link></li>
-                    <li><Link href="/policy" className={isPolicy ? 'active' : ''}>{t('common.policy')}</Link></li>
-                    <li><Link href="/terms" className={isTerms ? 'active' : ''}>{t('common.terms')}</Link></li>
-                </ul>
-                <div className="nav-actions desktop-actions" style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <div className="lang-switcher" style={{ display: 'flex', gap: '5px', fontWeight: 'bold', fontSize: '14px', color: '#ffffff' }}>
-                        <span style={{ cursor: 'pointer', opacity: language === 'vi' ? 1 : 0.5 }} onClick={() => setLanguage('vi')}>VI</span>
-                        <span style={{ opacity: 0.5 }}>|</span>
-                        <span style={{ cursor: 'pointer', opacity: language === 'en' ? 1 : 0.5 }} onClick={() => setLanguage('en')}>EN</span>
+                <div className="nh-top-right desktop-actions">
+                    <div className="nh-top-row">
+                        {langSwitcher}
+                        <a className="nh-hotline" href={HOTLINE_TEL}><i className="fa-solid fa-phone"></i> {HOTLINE}</a>
                     </div>
-                    {/* <Link href="/admin/login" className="btn-outline" style={{ width: 'auto', textDecoration: 'none' }}>{t('common.login')}</Link> */}
+                    <div className="nh-menu" role="navigation" aria-label="Menu">
+                        {SECTIONS.map((s) => (
+                            <Link
+                                key={s.id}
+                                href={`/#${s.id}`}
+                                className={s.key === 'promo' && isPromoPage ? 'active' : ''}
+                                onClick={onSectionClick(s.id)}
+                            >
+                                {nav[s.key]}
+                            </Link>
+                        ))}
+                    </div>
                 </div>
-                <button className="mobile-menu-btn" onClick={() => setIsMenuOpen(true)}><i className="fa-solid fa-bars"></i></button>
+                <div className="nh-mobile-bar">
+                    {langSwitcher}
+                    <button className="mobile-menu-btn" aria-label="Menu" onClick={() => setIsMenuOpen(true)}><i className="fa-solid fa-bars"></i></button>
+                </div>
             </nav>
 
             <div className={`mobile-menu-overlay ${isMenuOpen ? 'open' : ''}`}>
                 <div className="mobile-menu-header">
-                    <Link href="/" className="logo" onClick={() => setIsMenuOpen(false)} style={{ display: 'flex', alignItems: 'center' }}>
-                        <img src={settings?.logo_url || '/logo.png'} alt="Nine Housing" style={{ height: '32px', width: 'auto' }} />
+                    <Link href="/" className="nh-logo" onClick={onLogoClick}>
+                        <img src="/nine-logo.svg" alt="Nine Housing" />
                     </Link>
-                    <button className="mobile-menu-close" onClick={() => setIsMenuOpen(false)}><i className="fa-solid fa-xmark"></i></button>
+                    <button className="mobile-menu-close" aria-label="Close" onClick={() => setIsMenuOpen(false)}><i className="fa-solid fa-xmark"></i></button>
                 </div>
                 <ul className="mobile-nav-links">
-                    <li><Link href="/" onClick={() => setIsMenuOpen(false)}>{t('common.home')}</Link></li>
-                    <li><Link href="/apartment" onClick={() => setIsMenuOpen(false)}>{t('common.apartments')}</Link></li>
-                    <li><Link href="/blogs" onClick={() => setIsMenuOpen(false)}>{t('common.blogs')}</Link></li>
-                    <li><Link href="/policy" onClick={() => setIsMenuOpen(false)}>{t('common.policy')}</Link></li>
-                    <li><Link href="/terms" onClick={() => setIsMenuOpen(false)}>{t('common.terms')}</Link></li>
+                    {SECTIONS.map((s) => (
+                        <li key={s.id}><Link href={`/#${s.id}`} onClick={onSectionClick(s.id)}>{nav[s.key]}</Link></li>
+                    ))}
                 </ul>
-                <div className="mobile-nav-actions" style={{ display: 'flex', flexDirection: 'column', gap: '15px', alignItems: 'center' }}>
-                    <div className="lang-switcher" style={{ display: 'flex', gap: '10px', fontWeight: 'bold', fontSize: '16px', color: '#111827' }}>
-                        <span style={{ cursor: 'pointer', opacity: language === 'vi' ? 1 : 0.4 }} onClick={() => setLanguage('vi')}>VI</span>
-                        <span style={{ opacity: 0.4 }}>|</span>
-                        <span style={{ cursor: 'pointer', opacity: language === 'en' ? 1 : 0.4 }} onClick={() => setLanguage('en')}>EN</span>
-                    </div>
-                    {/* <Link href="/admin/login" className="btn-outline" onClick={() => setIsMenuOpen(false)} style={{ textAlign: 'center', textDecoration: 'none', width: '100%' }}>{t('common.login')}</Link> */}
+                <div className="mobile-nav-actions" style={{ display: 'flex', flexDirection: 'column', gap: '18px', alignItems: 'center' }}>
+                    {langSwitcher}
+                    <a className="nh-hotline" href={HOTLINE_TEL}><i className="fa-solid fa-phone"></i> {HOTLINE}</a>
                 </div>
             </div>
         </>
