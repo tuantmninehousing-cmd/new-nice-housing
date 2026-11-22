@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ADMIN_COOKIE_NAME, verifyAdminToken } from "@/lib/auth";
-import { DEFAULT_MODEL, askClaudeDetailed, findTelegramGroups, readNineConfig, sendTelegram, writeNineConfig } from "@/lib/nineChat";
+import { DEFAULT_MODEL, askClaudeDetailed, deleteTelegramWebhook, findTelegramGroups, readNineConfig, sendTelegram, setTelegramWebhook, telegramInfo, writeNineConfig } from "@/lib/nineChat";
+import { randomBytes } from "crypto";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,28 @@ export async function POST(request: NextRequest) {
       } catch (e) {
         return NextResponse.json({ ok: false, error: e instanceof Error ? e.message : "Lỗi" });
       }
+    }
+
+    if (action === "telegram_info") {
+      if (!cfg.telegram_token) return NextResponse.json({ ok: false, error: "Chưa lưu mã bot Telegram" });
+      return NextResponse.json(await telegramInfo(cfg.telegram_token));
+    }
+
+    // Bật/tắt việc lễ tân trả lời khách từ Telegram (Telegram gửi tin trong nhóm về web)
+    if (action === "set_webhook") {
+      if (!cfg.telegram_token) return NextResponse.json({ ok: false, error: "Chưa lưu mã bot Telegram" });
+      const host = (request.headers.get("x-forwarded-host") || request.headers.get("host") || "").split(",")[0].trim();
+      const site = host && !/^(localhost|127\.|\[::1\])/.test(host) ? `https://${host}` : "https://ninehousing.com";
+      const secret = cfg.webhook_secret || randomBytes(24).toString("hex");
+      if (!cfg.webhook_secret) await writeNineConfig({ webhook_secret: secret });
+      const r = await setTelegramWebhook(cfg.telegram_token, `${site}/api/nine-chat/telegram`, secret);
+      return NextResponse.json({ ...r, info: await telegramInfo(cfg.telegram_token) });
+    }
+
+    if (action === "delete_webhook") {
+      if (!cfg.telegram_token) return NextResponse.json({ ok: false, error: "Chưa lưu mã bot Telegram" });
+      const r = await deleteTelegramWebhook(cfg.telegram_token);
+      return NextResponse.json({ ...r, info: await telegramInfo(cfg.telegram_token) });
     }
 
     if (action === "test_telegram") {

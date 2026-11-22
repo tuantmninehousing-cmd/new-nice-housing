@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { askClaude, ChatMessage, HOTLINE, readNineConfig, sendTelegram } from "@/lib/nineChat";
+import { getSession, linkTelegramMessage, staffIsHandling, touchSession } from "@/lib/nineStore";
 
 export const dynamic = "force-dynamic";
 
@@ -34,11 +35,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Bad request" }, { status: 400 });
     }
     const lang = ["vi", "en", "ja", "ko"].includes(body.lang) ? (body.lang as string) : "vi";
-    const sessionId = clean(body.sessionId, 12).replace(/[^a-zA-Z0-9]/g, "") || "khach";
+    const sessionId = clean(body.sessionId, 12).replace(/[^a-zA-Z0-9]/g, "");
+    if (sessionId.length < 4) return NextResponse.json({ error: "Bad request" }, { status: 400 });
     const messages: ChatMessage[] = (body.messages as { role?: string; content?: unknown }[])
       .slice(-16)
       .map((m): ChatMessage => ({ role: m.role === "assistant" ? "assistant" : "user", content: clean(m.content, 1200) }))
       .filter((m) => m.content);
+    // Gộp các tin liền nhau của cùng một bên (ví dụ Nine rồi lễ tân) thành một
+    for (let i = messages.length - 1; i > 0; i--) {
+      if (messages[i].role === messages[i - 1].role) { messages[i - 1].content += "\n" + messages[i].content; messages.splice(i, 1); }
+    }
     // Claude yêu cầu bắt đầu bằng tin của khách và kết thúc bằng tin của khách
     while (messages.length && messages[0].role !== "user") messages.shift();
     if (!messages.length || messages[messages.length - 1].role !== "user") {
@@ -60,6 +66,19 @@ export async function POST(request: Request) {
     if (hits.size > 5000) hits.clear();
 
     const cfg = await readNineConfig();
+    const session = await touchSession(sessionId, lang);
+    const isFirst = messages.filter((m) => m.role === "user").length === 1;
+    const hasPhone = PHONE.test(last);
+    const head = `${hasPhone ? "📞 KHÁCH ĐỂ LẠI LIÊN HỆ\n" : ""}🌐 Chat web #${sessionId} (${lang})${isFirst ? " — khách mới" : ""}`;
+    const tail = "\n↩️ Trả lời (Reply) tin này để nhắn thẳng cho khách.";
+
+    // Lễ tân vừa trả lời khách này: Nine tạm im, chỉ chuyển tin về nhóm
+    if (staffIsHandling(session)) {
+      const sent = await sendTelegram(cfg, `${head}\nKhách: ${last}\n(Nine đang tạm ngừng vì lễ tân đang hỗ trợ)${tail}`);
+      if (sent.messageId) await linkTelegramMessage(sessionId, sent.messageId);
+      return NextResponse.json({ reply: "", ai: false, staff: true });
+    }
+
     let reply: string | null = null;
     let aiError = "";
     try {
@@ -72,15 +91,24 @@ export async function POST(request: Request) {
     if (!reply) reply = FALLBACK[lang];
 
     // Gửi nội dung tư vấn về nhóm Telegram CSKH
-    const isFirst = messages.filter((m) => m.role === "user").length === 1;
-    const hasPhone = PHONE.test(last);
-    const head = `${hasPhone ? "📞 KHÁCH ĐỂ LẠI LIÊN HỆ\n" : ""}🌐 Chat web #${sessionId} (${lang})${isFirst ? " — khách mới" : ""}`;
-    const note = usedAi ? "" : `\n⚠️ Nine chưa trả lời được${cfg.anthropic_key ? " (lỗi kết nối AI)" : " (chưa cài khóa AI)"} — lễ tân cần trả lời khách qua số khách để lại.`;
-    await sendTelegram(cfg, `${head}\nKhách: ${last}\nNine: ${reply}${note}`);
+    const note = usedAi ? "" : `\n⚠️ Nine chưa trả lời được${cfg.anthropic_key ? " (lỗi kết nối AI)" : " (chưa cài khóa AI)"} — lễ tân cần trả lời khách.`;
+    const sent = await sendTelegram(cfg, `${head}\nKhách: ${last}\nNine: ${reply}${note}${tail}`);
+    if (sent.messageId) await linkTelegramMessage(sessionId, sent.messageId);
 
     return NextResponse.json({ reply, ai: usedAi });
   } catch (e) {
     console.error("POST /api/nine-chat", e);
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
+}
+
+// Khung chat của khách hỏi định kỳ: có tin nào lễ tân vừa trả lời từ Telegram không?
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const sid = (searchParams.get("sid") || "").replace(/[^a-zA-Z0-9]/g, "").slice(0, 12);
+  const after = Number(searchParams.get("after") || 0) || 0;
+  if (sid.length < 4) return NextResponse.json({ staff: [] });
+  const s = await getSession(sid);
+  const staff = s ? s.staff.filter((m) => m.i > after).map((m) => ({ i: m.i, text: m.text, name: m.name })) : [];
+  return NextResponse.json({ staff }, { headers: { "Cache-Control": "no-store" } });
 }

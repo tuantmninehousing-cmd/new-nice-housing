@@ -25,6 +25,7 @@ export default function AdminNineChatPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [groups, setGroups] = useState<{ id: string; title: string }[]>([]);
+  const [botInfo, setBotInfo] = useState<{ name: string; username: string; webhook_host: string; pending: number; last_error: string } | null>(null);
 
   const load = () =>
     fetch("/api/admin/nine-chat")
@@ -70,6 +71,15 @@ export default function AdminNineChatPage() {
       setGroups(d.groups || []);
       setMsg({ ok: (d.groups || []).length > 0, text: (d.groups || []).length ? "Bấm vào tên nhóm bên dưới để chọn, rồi bấm Lưu." : "Chưa thấy nhóm nào. Hãy thêm bot vào nhóm, gửi một tin bất kỳ trong nhóm (ví dụ /start), rồi bấm lại." });
     } else setMsg({ ok: false, text: d.error || "Không tìm được nhóm." });
+  };
+
+  const hook = async (action: string) => {
+    const d = await call({ action });
+    const info = d.info || d;
+    if (info && info.username) setBotInfo(info);
+    if (d.ok === false) setMsg({ ok: false, text: "Telegram báo lỗi: " + (d.error || "") });
+    else if (action === "set_webhook") setMsg({ ok: true, text: "Đã bật. Vào nhóm CSKH gõ /start để thử: bot sẽ trả lời hướng dẫn." });
+    else if (action === "delete_webhook") setMsg({ ok: true, text: "Đã tắt nhận trả lời từ Telegram." });
   };
 
   const testTelegram = async () => {
@@ -156,6 +166,31 @@ export default function AdminNineChatPage() {
               <p style={hint}>Ví dụ: giờ nhận/trả phòng, chính sách hủy, khuyến mãi đang chạy, điều Nine không được nói. Nine đã biết sẵn tòa nhà, hạng phòng và giá theo báo giá ngắn hạn.</p>
               <textarea className="admin-form-input" style={{ minHeight: 140, padding: 10 }} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={4000} />
             </div>
+          </div>
+        </div>
+
+        <div className="admin-form-card" style={{ marginBottom: 24 }}>
+          <div className="admin-form-card-header">
+            <MessageCircle size={14} style={{ color: "var(--a-gold)" }} />
+            <span className="admin-form-card-header-title">3. Lễ tân trả lời khách ngay trong Telegram</span>
+            <div className="admin-form-card-header-dot" />
+          </div>
+          <div className="admin-form-card-body" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <p style={hint}>
+              Khi bật: trong nhóm CSKH, lễ tân bấm Trả lời (Reply) vào tin “🌐 Chat web #mã” rồi gõ nội dung — khách thấy ngay trong khung chat trên web. Cũng có thể gõ: /tl mã nội-dung. Sau khi lễ tân trả lời, Nine tạm ngừng trả lời khách đó 10 phút.
+              Lưu ý: bot chỉ nên dùng cho một nơi nhận tin; nếu bot này đang được chương trình khác đọc tin thì chương trình đó sẽ ngừng nhận.
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button type="button" style={btn} disabled={busy} onClick={() => hook("telegram_info")}>Xem trạng thái bot</button>
+              <button type="button" style={btnMain} disabled={busy} onClick={() => hook("set_webhook")}>Bật</button>
+              <button type="button" style={btn} disabled={busy} onClick={() => hook("delete_webhook")}>Tắt</button>
+            </div>
+            {botInfo && (
+              <p style={{ ...hint, color: "#0f172a" }}>
+                Bot: {botInfo.name} (@{botInfo.username}) · Nhận trả lời từ Telegram: {botInfo.webhook_host ? "ĐANG BẬT → " + botInfo.webhook_host : "đang tắt"} · Tin chờ: {botInfo.pending}
+                {botInfo.last_error ? " · Lỗi gần nhất: " + botInfo.last_error : ""}
+              </p>
+            )}
           </div>
         </div>
 

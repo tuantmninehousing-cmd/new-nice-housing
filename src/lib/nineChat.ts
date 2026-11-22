@@ -14,6 +14,7 @@ export interface NineChatConfig {
   telegram_chat_id?: string;
   model?: string;
   extra_notes?: string;
+  webhook_secret?: string;
 }
 
 export async function readNineConfig(): Promise<NineChatConfig> {
@@ -132,20 +133,59 @@ export async function askClaude(cfg: NineChatConfig, messages: ChatMessage[]): P
   return r.text;
 }
 
-export async function sendTelegram(cfg: NineChatConfig, text: string): Promise<{ ok: boolean; error?: string }> {
+export async function sendTelegram(cfg: NineChatConfig, text: string, replyTo?: number): Promise<{ ok: boolean; error?: string; messageId?: number }> {
   if (!cfg.telegram_token || !cfg.telegram_chat_id) return { ok: false, error: "Chưa cài Telegram" };
   try {
+    const payload: Record<string, unknown> = { chat_id: cfg.telegram_chat_id, text: text.slice(0, 3900), disable_web_page_preview: true };
+    if (replyTo) { payload.reply_to_message_id = replyTo; payload.allow_sending_without_reply = true; }
     const res = await fetch(`https://api.telegram.org/bot${cfg.telegram_token}/sendMessage`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ chat_id: cfg.telegram_chat_id, text: text.slice(0, 3900), disable_web_page_preview: true }),
+      body: JSON.stringify(payload),
       signal: AbortSignal.timeout(15000),
     });
-    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string };
-    return data.ok ? { ok: true } : { ok: false, error: data.description || `Telegram ${res.status}` };
+    const data = (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string; result?: { message_id?: number } };
+    return data.ok ? { ok: true, messageId: data.result?.message_id } : { ok: false, error: data.description || `Telegram ${res.status}` };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Lỗi mạng" };
   }
+}
+
+async function tg(token: string, method: string, payload?: Record<string, unknown>) {
+  const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(payload || {}),
+    signal: AbortSignal.timeout(15000),
+  });
+  return (await res.json().catch(() => ({}))) as { ok?: boolean; description?: string; result?: Record<string, unknown> };
+}
+
+/** Thông tin bot và đường nhận tin (webhook) hiện tại. Không trả mã bí mật. */
+export async function telegramInfo(token: string) {
+  const [me, hook] = await Promise.all([tg(token, "getMe"), tg(token, "getWebhookInfo")]);
+  const url = String(hook.result?.url || "");
+  return {
+    ok: !!me.ok,
+    error: me.ok ? "" : me.description || "",
+    username: String(me.result?.username || ""),
+    name: String(me.result?.first_name || ""),
+    reads_all_group_messages: !!me.result?.can_read_all_group_messages,
+    webhook_host: url ? url.replace(/^https?:\/\//, "").split("?")[0] : "",
+    pending: Number(hook.result?.pending_update_count || 0),
+    last_error: String(hook.result?.last_error_message || ""),
+  };
+}
+
+/** Bật đường nhận tin: Telegram sẽ gửi tin trong nhóm (lệnh và tin trả lời bot) về web. */
+export async function setTelegramWebhook(token: string, url: string, secret: string) {
+  const r = await tg(token, "setWebhook", { url, secret_token: secret, allowed_updates: ["message"], drop_pending_updates: true });
+  return { ok: !!r.ok, error: r.ok ? "" : r.description || "Telegram từ chối" };
+}
+
+export async function deleteTelegramWebhook(token: string) {
+  const r = await tg(token, "deleteWebhook", {});
+  return { ok: !!r.ok, error: r.ok ? "" : r.description || "" };
 }
 
 /** Tìm các nhóm mà bot đang ở trong (dựa trên tin nhắn gần đây) để lấy mã nhóm. */

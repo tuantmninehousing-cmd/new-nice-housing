@@ -206,6 +206,8 @@ footer.nh-footer { background: var(--nh-navy); border-top: 3px solid #EDBF4F; }
 .nh-chat-body { max-height: min(46vh, 380px); overflow-y: auto; }
 .nh-chat-bubble { white-space: pre-wrap; overflow-wrap: anywhere; }
 .nh-chat-bubble.me { align-self: flex-end; background: var(--nh-navy2); color: #FFFFFF; border-radius: 14px 4px 14px 14px; }
+.nh-chat-bubble.staff { background: #FFF6DD; border: 1px solid #EDBF4F; }
+.nh-chat-who { display: block; font-size: 11px; font-weight: 700; color: var(--nh-goldink); margin-bottom: 2px; }
 .nh-chat-bubble.typing { color: var(--nh-muted); font-style: italic; }
 .nh-chat-bubble.err { background: #FDECEC; color: #8A1F1F; }
 .nh-chat-chips { display: flex; flex-wrap: wrap; gap: 6px; }
