@@ -1,0 +1,159 @@
+SETUP WEB NINEHOUSING.COM – BẢN DỰNG LẠI TOÀN BỘ
+Cập nhật: 22/11/2026. Người yêu cầu: anh Tuấn (Nine Housing).
+Cách dùng: gửi file này cho Claude (hoặc lập trình viên) và nói "dựng lại web ninehousing.com theo file này".
+File này KHÔNG chứa mật khẩu hay khóa bí mật. Các mã bí mật do anh Tuấn tự nhập (xem mục 6).
+
+======================================================================
+1. TỔNG QUAN
+======================================================================
+- Trang web: https://ninehousing.com (trang quản trị: https://ninehousing.com/admin).
+- Giao diện: navy + vàng theo logo Nine Housing, khẩu hiệu "Live your way".
+- 5 mục trên trang chủ: Giới thiệu (#gioi-thieu), Tòa nhà (#toa-nha), Đặt phòng (#dat-phong),
+  Khuyến mãi (#khuyen-mai), Liên hệ (#lien-he).
+- 4 ngôn ngữ: Việt, Anh, Nhật, Hàn (nút chuyển ở đầu trang; lần đầu chọn theo trình duyệt của khách).
+- Nút "Chat với Nine": Nine (Claude) tự trả lời khách; nội dung gửi về nhóm Telegram "NineHousing CSKH";
+  lễ tân trả lời khách qua nút bấm trong tin Telegram.
+- Giá trên web: theo BÁO GIÁ NGẮN HẠN 10/10/2026, CHƯA bao gồm thuế và phí. Không có giảm giá riêng trên web.
+- Hotline/Zalo: 0968.071.393. Văn phòng: Số 136 phố Vũ Miên, phường Tây Hồ, Hà Nội.
+
+Quy tắc nội dung anh Tuấn đã chốt:
+- Gọi là "căn hộ" (không ghi "căn hộ dịch vụ"), ở Ba Đình và Tây Hồ.
+- Không mô tả tòa nhà nằm trong ngõ; nói về trải nghiệm yên tĩnh, tiện nghi, hỗ trợ 24/7.
+- Không ghi số lượng tòa nhà trên menu.
+- Mục Tòa nhà: chỉ giới thiệu, KHÔNG có nút đặt phòng. Việc chọn tòa/hạng phòng nằm ở mục Đặt phòng.
+- Mục Khuyến mãi thay cho Blog: lấy bài anh đăng ở mục Blogs trong trang quản trị.
+
+======================================================================
+2. NƠI ĐỂ MÃ NGUỒN VÀ MÁY CHỦ
+======================================================================
+- Kho mã gốc của lập trình viên (bạn Nam): https://github.com/namth3061/new-nice-housing (nhánh develop).
+- Kho mã của anh Tuấn (bản sao, Claude đẩy mã vào đây):
+  https://github.com/tuantmninehousing-cmd/new-nice-housing
+  Nhánh đang chạy trên web: nine-redesign.
+  Tài khoản GitHub: tuantmninehousing-cmd (đăng ký bằng tuantm.ninehousing@gmail.com).
+  Claude GitHub App đã được cài cho kho này (để Claude đẩy mã lên được).
+- Máy chủ web (VPS): 103.75.184.88, cổng SSH 24700, tài khoản root (mật khẩu: anh Tuấn / bạn Nam giữ).
+  Thư mục mã: /root/new-nice-housing. Chạy bằng pm2, tên tiến trình: ninehousing (lệnh: npm start = next start -p 3030).
+  nginx đứng trước, cổng 80/443. Node v22, git 2.34.
+  File cài đặt riêng trên máy chủ (không nằm trên GitHub, KHÔNG được xóa):
+    config/settings.json            – địa chỉ, email, logo… nhập từ trang quản trị
+    config/nine-chat.json           – khóa Claude, mã bot Telegram, mã nhóm (bí mật)
+    config/nine-chat-sessions.json  – các cuộc chat web trong 48 giờ gần nhất
+    public/uploads/                 – ảnh tải lên từ trang quản trị
+    .env                            – kết nối cơ sở dữ liệu PostgreSQL
+- Công nghệ: Next.js 16 (App Router) + React 19 + PostgreSQL.
+
+======================================================================
+3. CÁCH CẬP NHẬT WEB (mỗi khi Claude đẩy mã mới lên GitHub)
+======================================================================
+Claude không được phép tự nhập mật khẩu, nên bước này anh Tuấn làm trên máy chủ PC ở văn phòng:
+1) Mở Windows PowerShell.
+2) Dán nguyên dòng dưới đây rồi Enter (hoặc nhấn mũi tên lên ↑ nếu đã từng chạy):
+
+ssh root@103.75.184.88 -p 24700 "set -o pipefail; cd /root/new-nice-housing && git fetch origin nine-redesign && rm -rf .next-truoc-nine && cp -a .next .next-truoc-nine && git checkout -B nine-redesign FETCH_HEAD && if npm run build 2>&1 | tail -30; then pm2 restart ninehousing && sleep 6 && echo ==CAP NHAT XONG== && curl -s -o /dev/null -w 'Ma tra ve: %{http_code}' http://127.0.0.1:3030/ ; else echo ==LOI - DA QUAY LAI BAN CU== ; git checkout develop ; rm -rf .next ; mv .next-truoc-nine .next ; pm2 restart ninehousing ; fi"
+
+3) Khi hiện "root@103.75.184.88's password:" thì dán mật khẩu (chuột phải) rồi Enter. Màn hình không hiện ký tự là bình thường.
+4) Chờ 2–4 phút. Thấy "==CAP NHAT XONG==" và "Ma tra ve: 200" là xong. Mở web, nhấn Ctrl+F5.
+Lệnh này tự sao lưu bản đang chạy; nếu dựng lỗi thì tự quay về bản cũ và in "==LOI - DA QUAY LAI BAN CU==".
+Lưu ý: dán từng dòng một trong PowerShell; nếu điều khiển từ xa (UltraViewer) thì phải copy mật khẩu ngay trên máy chủ PC.
+
+======================================================================
+4. CÁC FILE CHÍNH TRONG MÃ NGUỒN (nhánh nine-redesign)
+======================================================================
+Giao diện
+- src/app/nine.css                      – toàn bộ màu sắc, đầu trang, trang chủ, chân trang, khung chat.
+- src/app/layout.tsx                    – nạp nine.css; nạp phông Lora + Noto Sans JP/KR bằng thẻ <link>.
+- src/components/Layout/Navbar.tsx      – logo (public/nine-logo.svg), menu 5 mục, hotline, chuyển ngôn ngữ.
+- src/components/Layout/Footer.tsx      – chân trang + gắn nút chat.
+- src/views/HomeView/HomeView.tsx       – trang chủ 5 mục.
+- src/data/nine.ts                      – DỮ LIỆU: 12 tòa nhà, địa chỉ, tiện ích, hạng phòng, giá (nghìn đồng/đêm:
+                                          ngày thường, thứ 6–thứ 7), chữ trang chủ 4 ngôn ngữ, cách ghép tòa với
+                                          "chỗ nghỉ" trong trang quản trị (trường match).
+- src/context/LanguageContext.tsx, src/i18n/vi.json, en.json, ja.json, ko.json – chữ các trang còn lại.
+- public/nine/*.jpg                     – ảnh tòa nhà tạm (480×360) và ảnh đầu trang (800×600; nên thay ảnh ≥1920px).
+Chat Nine
+- src/components/Nine/ChatNine.tsx      – khung chat của khách (hỏi tin lễ tân mỗi 4 giây, trong 30 phút).
+- src/lib/nineChat.ts                   – đọc/ghi cài đặt bí mật, soạn "kiến thức" cho Nine từ nine.ts, gọi Claude,
+                                          gửi Telegram kèm nút, tạo mã cho đường link trả lời.
+- src/lib/nineStore.ts                  – lưu các cuộc chat (48 giờ, tối đa 400 cuộc).
+- src/app/api/nine-chat/route.ts        – khách gửi tin (POST) và hỏi tin lễ tân (GET).
+- src/app/api/nine-chat/staff/route.ts  – lễ tân xem cuộc chat, trả lời, nhận chat, trả lại cho Nine.
+- src/app/tra-loi/[sid]/page.tsx        – trang lễ tân trả lời (mở từ nút trong Telegram).
+- src/app/api/admin/nine-chat/route.ts  – lưu/kiểm tra cài đặt (chỉ người đã đăng nhập trang quản trị).
+- src/app/admin/nine-chat/page.tsx      – trang "Chat Nine" trong trang quản trị.
+
+======================================================================
+5. CÁCH CÁC PHẦN HOẠT ĐỘNG
+======================================================================
+Đặt phòng
+- Khách chọn tòa + hạng phòng, xem bảng giá, bấm "Đặt phòng" → mở trang chi tiết "chỗ nghỉ" tương ứng trong
+  trang quản trị → khách gửi yêu cầu → đơn nằm ở mục Đơn hàng trong trang quản trị → lễ tân xác nhận.
+- Tòa chưa có "chỗ nghỉ" trong trang quản trị (22 Kim Mã, 92 Đào Tấn, 60 Linh Lang) thì nút dẫn xuống mục Liên hệ.
+- CHƯA nối Bluejay: web chưa tự biết phòng trống.
+Khuyến mãi
+- Trang chủ hiện 3 bài mới nhất đăng ở mục Blogs TỪ NGÀY 22/11/2026 trở đi; chưa có thì ghi "chưa có chương trình".
+Chat Nine
+- Khách nhắn → máy chủ gọi Claude (mẫu claude-haiku-5-5) kèm dữ liệu tòa nhà/giá → trả lời bằng ngôn ngữ của khách.
+- Nine KHÔNG biết phòng trống, không tự đặt phòng, không tự tính thuế phí, không nói số căn của từng hạng phòng;
+  khi khách muốn đặt thì xin ngày ở, số người, tên, số điện thoại/Zalo và nói lễ tân sẽ xác nhận.
+- Mỗi lượt hỏi đáp gửi về nhóm Telegram dạng "🌐 Chat web #mã", kèm 2 nút:
+    💬 Trả lời khách        – mở trang trả lời: xem cả cuộc chat, gõ nội dung, bấm "Gửi cho khách".
+    👤 Lễ tân tự trả lời    – lễ tân nhận cuộc chat, Nine ngừng trả lời khách đó (tối đa 60 phút).
+  Trên trang trả lời có nút "▶️ Để Nine tiếp tục". Sau mỗi tin lễ tân gửi, Nine tự im 10 phút.
+  Khách để lại số điện thoại thì tin có dòng "📞 KHÁCH ĐỂ LẠI LIÊN HỆ".
+- Giới hạn chống lạm dụng: 30 tin / 10 phút / một khách; 1.500 lượt / ngày cho cả web.
+- Chưa có khóa Claude hoặc Claude lỗi: web tự trả lời câu xin tên + số điện thoại và báo về nhóm để lễ tân tiếp nhận.
+- QUAN TRỌNG: bot "Nine - Nine Housing" đang được một chương trình khác của anh Tuấn đọc tin (tin có nút
+  Gửi / Lễ tân tự trả lời / Bỏ qua). Web CHỈ dùng bot để GỬI tin, không đặt webhook, không gọi getUpdates,
+  để không làm hỏng chương trình đó. Lễ tân không bấm Reply vào tin "Chat web", chỉ dùng nút.
+
+======================================================================
+6. CÀI ĐẶT BÍ MẬT (anh Tuấn tự nhập, Claude không được nhập thay)
+======================================================================
+Vào https://ninehousing.com/admin → mục "Chat Nine":
+1) Mã bot Telegram (token của bot "Nine - Nine Housing", lấy trong @BotFather) → Lưu.
+2) Mã nhóm Telegram "NineHousing CSKH": -5456851912 → Lưu → bấm "Gửi tin thử".
+3) Khóa Claude API: tạo ở trang Claude Platform, mục API keys; khóa bắt đầu bằng "sk-ant-"
+   (không phải dòng "apikey_..."). Dán → Lưu → bấm "Hỏi thử Nine". Tài khoản cần có tiền nạp sẵn.
+4) Ô "Ghi chú thêm cho Nine": giờ nhận/trả phòng, chính sách hủy, khuyến mãi đang chạy…
+Các mã này lưu ở config/nine-chat.json trên máy chủ, không hiện lại ra ngoài.
+
+======================================================================
+7. DỰNG LẠI TỪ ĐẦU (khi mất máy chủ hoặc chuyển máy chủ)
+======================================================================
+1) Máy chủ Linux có Node 22, git, PostgreSQL, nginx, pm2.
+2) git clone https://github.com/tuantmninehousing-cmd/new-nice-housing && cd new-nice-housing && git checkout nine-redesign
+3) Tạo file .env theo README.md (kết nối PostgreSQL, JWT_SECRET – đặt chuỗi riêng, đừng để mặc định).
+4) npm ci → npm run migrate (tạo bảng và dữ liệu mẫu) → npm run build → pm2 start npm --name ninehousing -- start
+5) nginx trỏ tên miền ninehousing.com về cổng 3030, bật HTTPS.
+6) Khôi phục (nếu còn bản sao): config/settings.json, public/uploads/, dữ liệu PostgreSQL (tòa nhà, đơn, bài viết).
+7) Đăng nhập trang quản trị, làm lại mục 6.
+8) Kiểm tra theo mục 8.
+Nếu chỉ mất mã trên máy chủ: làm lại bước 2, 4 rồi chạy lệnh ở mục 3.
+
+======================================================================
+8. KIỂM TRA SAU MỖI LẦN CẬP NHẬT
+======================================================================
+- Trang chủ: logo, 5 mục menu, 12 tòa nhà có ảnh, bảng giá đổi theo tòa, dòng "chưa bao gồm thuế và phí".
+- Chuyển VI / EN / 日本語 / 한국어: chữ đổi theo.
+- Tiêu đề tiếng Việt không vỡ dấu (ví dụ "Cần tư vấn chọn phòng?").
+- Bấm "Đặt phòng" ở A10 Kim Mã → mở trang chi tiết; ở 92 Đào Tấn → xuống mục Liên hệ.
+- Chat: nhắn một câu → Nine trả lời → nhóm Telegram có tin kèm 2 nút → bấm "Trả lời khách", gửi một câu →
+  khách thấy tin màu vàng "Lễ tân Nine Housing".
+- /admin → Chat Nine: "Hỏi thử Nine" và "Gửi tin thử" đều báo thành công.
+
+======================================================================
+9. VIỆC CÒN LẠI / ĐIỂM CẦN BIẾT
+======================================================================
+- Chưa nối Bluejay Booking Engine (phòng trống, giá theo ngày, tạo đơn thật). Cần khóa Bluejay để trên máy chủ
+  và Bluejay cho phép địa chỉ IP của máy chủ.
+- 3 tòa chưa có trong trang quản trị: 22 Kim Mã, 92 Đào Tấn, 60 Linh Lang. A10 Kim Mã và 16 Linh Lang chưa có ảnh
+  trong trang quản trị (đang dùng ảnh tạm).
+- Ảnh đầu trang còn nhỏ; mục Hành trình phát triển chưa có năm cụ thể.
+- Trang /blogs vẫn liệt kê 3 bài viết cũ (tháng 1–2/2026); chưa ẩn/xóa vì là dữ liệu của anh Tuấn.
+- 11 "chỗ nghỉ" mẫu của giao diện cũ đã chuyển sang trạng thái ẩn (không xóa).
+- Bảo mật cần bạn Nam xử lý: (a) đổi mật khẩu root máy chủ (đã lộ trong chat/ảnh chụp ngày 22/11/2026);
+  (b) đổi mật khẩu trang quản trị; (c) nhiều API của web gốc (settings, users, properties…) chưa kiểm tra đăng nhập
+  khi ghi dữ liệu; (d) kho mã gốc đang để công khai.
+- Khi đổi giá: sửa src/data/nine.ts (đơn vị nghìn đồng) rồi cập nhật web; Nine tự dùng giá mới.
+- Khi muốn Nine nói khác đi: sửa ô "Ghi chú thêm cho Nine" trong trang quản trị (không cần cập nhật web).
