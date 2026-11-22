@@ -1,5 +1,5 @@
 /* ===== NINE HOUSING – giao diện navy + vàng (22/11/2026) ===== */
-@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,600;0,700;1,600;1,700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap');
+/* Phông Lora, Noto Sans JP/KR được nạp ở đầu globals.css (lệnh @import phải đứng đầu file thì trình duyệt mới nhận). */
 
 :root {
   --gold: #D2A23A;
@@ -23,7 +23,7 @@
   --nh-muted: #5B6275;
   --nh-goldtext: #F2CD6B;
   --nh-goldink: #B8913F;
-  --nh-serif: Lora, 'Noto Sans JP', 'Noto Sans KR', Georgia, serif;
+  --nh-serif: Lora, 'Playfair Display', 'Times New Roman', 'Noto Sans JP', 'Noto Sans KR', serif;
 }
 
 body {
@@ -89,7 +89,7 @@ nav.nh-top {
 .nh-hero-in { position: relative; padding-top: 72px; padding-bottom: 72px; }
 .nh-hero-frame { border: 1px solid rgba(242, 205, 107, 0.7); padding: 56px clamp(20px, 5vw, 64px) 48px; text-align: center; color: #FFFFFF; }
 .nh-hero-frame h1 { margin: 0; font-weight: 700; font-size: clamp(34px, 5vw, 62px); line-height: 1.12; color: #FFFFFF; }
-.nh-live { margin: 10px 0 0; font-family: Lora, Georgia, serif; font-style: italic; font-weight: 700; font-size: clamp(30px, 4.2vw, 52px); color: var(--nh-goldtext); line-height: 1.1; }
+.nh-live { margin: 10px 0 0; font-family: var(--nh-serif); font-style: italic; font-weight: 700; font-size: clamp(30px, 4.2vw, 52px); color: var(--nh-goldtext); line-height: 1.1; }
 .nh-live.small { font-size: 24px; margin-top: 26px; position: relative; }
 .nh-rule { width: 120px; height: 1px; background: var(--nh-goldtext); margin: 26px auto; }
 .nh-hero-lead { margin: 0 auto; max-width: 660px; font-size: 18px; line-height: 1.65; color: #E9E4D6; }
@@ -98,7 +98,7 @@ nav.nh-top {
 .nh-stats-band { background: var(--nh-navy); color: #FFFFFF; }
 .nh-stats { padding-top: 8px; padding-bottom: 56px; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); row-gap: 20px; }
 .nh-stat { padding: 8px 24px; border-left: 1px solid rgba(242, 205, 107, 0.45); }
-.nh-stat .n { font-family: Lora, serif; font-size: 44px; font-weight: 700; color: var(--nh-goldtext); }
+.nh-stat .n { font-family: var(--nh-serif); font-size: 44px; font-weight: 700; color: var(--nh-goldtext); }
 .nh-stat .l { font-size: 15px; color: #D6D1C3; }
 
 .nh-intro { padding-top: 88px; padding-bottom: 72px; display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start; }
@@ -106,7 +106,7 @@ nav.nh-top {
 .nh-intro-text h2 { margin-bottom: 20px; }
 .nh-pillars { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
 .nh-pillar { background: #FFFFFF; border: 1px solid #E5DCC6; border-radius: 14px; padding: 16px; }
-.nh-pillar .t { font-family: Lora, serif; font-weight: 700; font-size: 18px; }
+.nh-pillar .t { font-family: var(--nh-serif); font-weight: 700; font-size: 18px; }
 .nh-pillar p { margin: 6px 0 0; font-size: 14px; line-height: 1.55; color: var(--nh-muted); }
 .nh-journey, .nh-help { flex: 1 1 420px; min-width: 0; background: var(--nh-navy2); color: #FFFFFF; border-radius: 18px; padding: 36px 32px; position: relative; overflow: hidden; }
 .nh-diamond { position: absolute; right: -60px; bottom: -60px; width: 220px; height: 220px; border: 1px solid rgba(242, 205, 107, 0.35); transform: rotate(45deg); }
@@ -114,7 +114,7 @@ nav.nh-top {
 .nh-journey ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 22px; position: relative; }
 .nh-journey li { display: flex; gap: 16px; font-size: 15px; line-height: 1.6; color: #E1DCCD; }
 .nh-journey li b { color: #FFFFFF; }
-.nh-journey .when { flex: none; width: 84px; font-family: Lora, serif; font-weight: 700; color: var(--nh-goldtext); }
+.nh-journey .when { flex: none; width: 84px; font-family: var(--nh-serif); font-weight: 700; color: var(--nh-goldtext); }
 
 .nh-band-white { background: #FFFFFF; border-top: 1px solid var(--nh-line); border-bottom: 1px solid var(--nh-line); }
 .nh-band-navy { background: var(--nh-navy); color: #FFFFFF; }
@@ -154,7 +154,7 @@ nav.nh-top {
 .nh-price { margin-top: 28px; background: #FFFFFF; border-radius: 16px; border: 1px solid var(--nh-line); overflow: hidden; }
 .nh-price-head { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 18px 20px; background: var(--nh-navy); color: #FFFFFF; }
 .nh-price-head img { width: 72px; height: 54px; border-radius: 8px; object-fit: cover; }
-.nh-price-head .name { font-family: Lora, serif; font-size: 22px; font-weight: 700; color: var(--nh-goldtext); }
+.nh-price-head .name { font-family: var(--nh-serif); font-size: 22px; font-weight: 700; color: var(--nh-goldtext); }
 .nh-price-head .sub { font-size: 13px; color: #B9C2D6; }
 .nh-price table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
 .nh-price thead tr { text-align: left; font-size: 12px; letter-spacing: 0.06em; color: var(--nh-muted); background: #FBF8F1; }
@@ -167,7 +167,7 @@ nav.nh-top {
 .nh-price-note { margin: 0; padding: 12px 20px 16px; font-size: 13px; color: var(--nh-muted); border-top: 1px solid #EFE7D5; }
 .nh-steps { list-style: none; margin: 32px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px; }
 .nh-steps li { padding: 24px; border-radius: 14px; background: #FFFFFF; border: 1px solid var(--nh-line); }
-.nh-steps .n { font-family: Lora, serif; font-size: 34px; color: var(--nh-goldink); font-weight: 700; }
+.nh-steps .n { font-family: var(--nh-serif); font-size: 34px; color: var(--nh-goldink); font-weight: 700; }
 .nh-steps h3 { margin: 6px 0; font-size: 18px; font-family: inherit; }
 .nh-steps p { margin: 0; font-size: 15px; line-height: 1.6; color: var(--nh-ink2); }
 
@@ -191,7 +191,7 @@ footer.nh-footer { background: var(--nh-navy); border-top: 3px solid #EDBF4F; }
 .nh-footer-line a { color: rgba(255, 255, 255, 0.85); text-decoration: none; }
 .nh-footer-line i { color: var(--nh-goldtext); }
 .nh-footer .footer-bottom { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
-.nh-footer-tag { font-family: Lora, serif; font-style: italic; font-size: 18px; color: var(--nh-goldtext); }
+.nh-footer-tag { font-family: var(--nh-serif); font-style: italic; font-size: 18px; color: var(--nh-goldtext); }
 
 /* ----- Chat Nine ----- */
 .nh-chat { position: fixed; right: 24px; bottom: 24px; z-index: 90; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
@@ -199,7 +199,7 @@ footer.nh-footer { background: var(--nh-navy); border-top: 3px solid #EDBF4F; }
 .nh-chat-fab span { width: 44px; height: 44px; border-radius: 50%; background: var(--gold-gradient); color: var(--nh-navy); display: flex; align-items: center; justify-content: center; font-size: 18px; }
 .nh-chat-panel { width: min(360px, calc(100vw - 48px)); background: #FFFFFF; border-radius: 18px; box-shadow: 0 24px 60px rgba(20, 28, 51, 0.3); overflow: hidden; border: 1px solid var(--nh-line); }
 .nh-chat-head { background: var(--nh-navy); color: #FFFFFF; padding: 16px 18px; display: flex; align-items: center; gap: 12px; }
-.nh-chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--nh-navy2); border: 1px solid #EDBF4F; color: var(--nh-goldtext); display: flex; align-items: center; justify-content: center; font-family: Lora, serif; font-weight: 700; }
+.nh-chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--nh-navy2); border: 1px solid #EDBF4F; color: var(--nh-goldtext); display: flex; align-items: center; justify-content: center; font-family: var(--nh-serif); font-weight: 700; }
 .nh-chat-close { width: 44px; height: 44px; border: 0; background: transparent; color: #FFFFFF; cursor: pointer; font-size: 22px; }
 .nh-chat-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--nh-cream); font-size: 14px; color: var(--nh-ink); }
 .nh-chat-bubble { align-self: flex-start; max-width: 88%; background: #FFFFFF; border-radius: 4px 14px 14px 14px; padding: 10px 12px; line-height: 1.5; }
