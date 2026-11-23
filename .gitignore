@@ -44,3 +44,4 @@ next-env.d.ts
 /config/settings.json
 /config/nine-chat.json
 /config/nine-chat-sessions.json
+/config/bluejay.json
